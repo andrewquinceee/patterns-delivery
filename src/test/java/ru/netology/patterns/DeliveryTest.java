@@ -9,6 +9,7 @@ import org.openqa.selenium.Keys;
 import java.time.Duration;
 
 import static com.codeborne.selenide.Selenide.$;
+import static com.codeborne.selenide.Selenide.$$;
 import static com.codeborne.selenide.Selenide.open;
 import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Condition.text;
@@ -41,21 +42,21 @@ public class DeliveryTest {
         String newDate = DataGenerator.generateDate(5);
         
         SelenideElement dateField = $("[data-test-id='date'] input");
-        dateField.doubleClick();
-        dateField.sendKeys(Keys.BACK_SPACE);
-        dateField.setValue(newDate);
-        dateField.sendKeys(Keys.TAB);
+        dateField.clear();               // Надежная очистка поля
+        dateField.setValue(newDate);     // Ввод новой даты
+        dateField.sendKeys(Keys.TAB);    // Снимаем фокус для триггера валидации
 
         // 4. ОТПРАВЛЯЕМ ВТОРОЙ РАЗ
         $(".button").click();
 
-        // 5. Проверяем сообщение о подтверждении (точный селектор, а не body)
-        $(".notification")
-                .shouldBe(visible, Duration.ofSeconds(15))
-                .shouldHave(text("Необходимо подтверждение"));
+        // 5. Находим ИМЕННО ТО уведомление, которое содержит нужный текст (игнорируя старое скрытое)
+        // И проверяем его видимость, как просил проверяющий
+        SelenideElement confirmationMessage = $$(".notification")
+                .findBy(text("Необходимо подтверждение"))
+                .shouldBe(visible, Duration.ofSeconds(15));
 
-        // 6. Нажимаем кнопку ПЕРЕЗАПЛАНИРОВАТЬ внутри самого уведомления
-        $(".notification .button").click();
+        // 6. Нажимаем кнопку ПЕРЕЗАПЛАНИРОВАТЬ внутри этого конкретного сообщения
+        confirmationMessage.$(".button").click();
     }
 
     private void fillForm(DeliveryInfo info) {
