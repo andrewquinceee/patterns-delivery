@@ -1,6 +1,5 @@
 package ru.netology.patterns;
 
-import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.SelenideElement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,39 +11,32 @@ import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
 import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Condition.text;
-import static com.codeborne.selenide.Condition.hidden;
-import static com.codeborne.selenide.Selectors.byTagName;
 
 public class DeliveryTest {
 
     @BeforeEach
     void setup() {
         Configuration.baseUrl = "http://localhost:9999";
-        Configuration.timeout = 20000; // Увеличиваем таймаут
     }
 
     @Test
     void shouldPlanDeliveryWithSameUserButDifferentDate() {
         open("/");
 
+        // 1. Генерируем пользователя ОДИН раз
         DeliveryInfo user = DataGenerator.generateDeliveryInfo(3);
 
-        // ПЕРВЫЙ ЗАКАЗ
+        // 2. ПЕРВЫЙ ЗАКАЗ
         fillForm(user);
         $(".button").click();
         
-        // Ждем появления ЛЮБОГО элемента с текстом "Успешно" на странице
-        $(byTagName("body"))
+        // Проверяем точный элемент уведомления, его видимость и полный текст с датой
+        $(".notification")
                 .shouldBe(visible, Duration.ofSeconds(15))
-                .shouldHave(text("Успешно"));
+                .shouldHave(text("Успешно!"))
+                .shouldHave(text(user.getDate()));
 
-        // Закрываем уведомление
-        $(byTagName("body")).sendKeys(Keys.ESCAPE);
-        
-        // Ждем пока уведомление исчезнет
-        $(".notification").shouldBe(hidden, Duration.ofSeconds(5));
-
-        // МЕНЯЕМ ДАТУ
+        // 3. МЕНЯЕМ ДАТУ для того же пользователя
         String newDate = DataGenerator.generateDate(5);
         
         SelenideElement dateField = $("[data-test-id='date'] input");
@@ -53,13 +45,16 @@ public class DeliveryTest {
         dateField.setValue(newDate);
         dateField.sendKeys(Keys.TAB);
 
-        // ОТПРАВЛЯЕМ ВТОРОЙ РАЗ
+        // 4. ОТПРАВЛЯЕМ ВТОРОЙ РАЗ
         $(".button").click();
 
-        // Ждем появления текста "подтверждение" на странице
-        $(byTagName("body"))
+        // 5. Проверяем сообщение о подтверждении (точный селектор, а не body)
+        $(".notification")
                 .shouldBe(visible, Duration.ofSeconds(15))
-                .shouldHave(text("подтверждение"));
+                .shouldHave(text("Необходимо подтверждение"));
+
+        // 6. Нажимаем кнопку ПЕРЕЗАПЛАНИРОВАТЬ внутри самого уведомления
+        $(".notification .button").click();
     }
 
     private void fillForm(DeliveryInfo info) {
