@@ -7,9 +7,13 @@ import java.util.Locale;
 
 public class DataGenerator {
     private static final Faker faker = new Faker(new Locale("ru"));
+    
+    // Массив допустимых городов для генерации (чтобы приложение не выдало ошибку валидации)
+    private static final String[] cities = {"Москва", "Санкт-Петербург", "Казань", "Новосибирск", "Екатеринбург"};
 
     public static String generateCity() {
-        return "Москва"; 
+        // Случайный выбор города из массива
+        return cities[faker.number().numberBetween(0, cities.length)];
     }
 
     public static String generateName() {
@@ -17,7 +21,7 @@ public class DataGenerator {
     }
 
     public static String generatePhone() {
-        return "+7" + faker.number().digits(10);
+        return "+79" + faker.number().digits(9);
     }
 
     public static String generateDate(int daysToAdd) {

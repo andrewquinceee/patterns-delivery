@@ -32,31 +32,37 @@ public class DeliveryTest {
         fillForm(user);
         $(".button").click();
         
-        // Проверяем точный элемент уведомления, его видимость и полный текст с датой
+        // Проверяем ПОЛНЫЙ текст сообщения с датой, как просил проверяющий
+        String expectedFirstMessage = "Успешно! Встреча успешно запланирована на " + user.getDate();
         $(".notification")
                 .shouldBe(visible, Duration.ofSeconds(15))
-                .shouldHave(text("Успешно!"))
-                .shouldHave(text(user.getDate()));
+                .shouldHave(text(expectedFirstMessage));
 
-        // 3. МЕНЯЕМ ДАТУ для того же пользователя
+        // 3. МЕНЯЕМ ДАТУ
         String newDate = DataGenerator.generateDate(5);
         
         SelenideElement dateField = $("[data-test-id='date'] input");
-        dateField.clear();               // Надежная очистка поля
-        dateField.setValue(newDate);     // Ввод новой даты
-        dateField.sendKeys(Keys.TAB);    // Снимаем фокус для триггера валидации
+        // Надежный способ очистки поля из прошлой темы (без лишнего TAB)
+        dateField.doubleClick();
+        dateField.sendKeys(Keys.BACK_SPACE);
+        dateField.setValue(newDate);
 
         // 4. ОТПРАВЛЯЕМ ВТОРОЙ РАЗ
         $(".button").click();
 
-        // 5. Находим ИМЕННО ТО уведомление, которое содержит нужный текст (игнорируя старое скрытое)
-        // И проверяем его видимость, как просил проверяющий
+        // 5. Находим сообщение о подтверждении и проверяем его
         SelenideElement confirmationMessage = $$(".notification")
                 .findBy(text("Необходимо подтверждение"))
                 .shouldBe(visible, Duration.ofSeconds(15));
 
-        // 6. Нажимаем кнопку ПЕРЕЗАПЛАНИРОВАТЬ внутри этого конкретного сообщения
+        // Нажимаем кнопку ПЕРЕЗАПЛАНИРОВАТЬ внутри этого сообщения
         confirmationMessage.$(".button").click();
+
+        // 6. ФИНАЛЬНАЯ ПРОВЕРКА: сообщение об успешном перепланировании с НОВОЙ датой
+        String expectedFinalMessage = "Успешно! Встреча успешно запланирована на " + newDate;
+        $(".notification")
+                .shouldBe(visible, Duration.ofSeconds(15))
+                .shouldHave(text(expectedFinalMessage));
     }
 
     private void fillForm(DeliveryInfo info) {
